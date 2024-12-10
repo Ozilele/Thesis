@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Client",
+    "slug": "Client",
+    "scheme": "Client",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "backgroundColor": "#20293F",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.thesis.StockApp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.thesis.StockApp"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "57c94d85-7423-4558-a096-bbfe958aab36"
+      }
+    }
+  }
+}
