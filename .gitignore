@@ -1,0 +1,48 @@
+# dependencies
+Client/node_modules/
+Client/package-lock.json
+Server/.server_venv/
+*__pycache__/
+
+# Build
+Client/android/
+Client/ios/
+
+# ENV
+Client/.env
+Server/financial_app/.env
+
+# Test dir
+Test/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+*.DS_Store
+*.pem
+
+# typescript
+*.tsbuildinfo
+
+# Server CSV Data
+Server/financial_app/5yearly_data/
+Server/financial_app/*.csv
