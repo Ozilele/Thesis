@@ -1,5 +1,5 @@
 from rest_framework import serializers, exceptions
-from .models import CompanyInfo, Company, Portfolio, MarketData, Transaction, Article, Report
+from .models import CompanyInfo, Company, Portfolio, MarketData, Transaction, Article, Report, WatchList
 
 class CompanyInfoSerializer(serializers.ModelSerializer):
   class Meta:
@@ -58,4 +58,9 @@ class ReportSerializer(serializers.ModelSerializer):
 
   def to_representation(self, instance):
     return super().to_representation(instance)
+
+class WatchListSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = WatchList
+    fields = ['user', 'company']
   

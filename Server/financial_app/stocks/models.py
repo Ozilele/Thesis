@@ -11,6 +11,9 @@ class CompanyInfo(models.Model):
   fiftyTwoWeekLowPrice = models.DecimalField(max_digits=15, decimal_places=3, null=True)
   dividendRate = models.DecimalField(max_digits=15, decimal_places=3, null=True)
 
+  def __str__(self):
+    return f"{self.website}:{self.country_from}, {self.city_from}"
+
 class Company(models.Model):
   name = models.CharField(max_length=100, blank=False)
   description = models.TextField(blank=True, null=True)
@@ -23,6 +26,14 @@ class Company(models.Model):
 
   def __str__(self) -> str:
     return f"{self.name}({self.ticker_symbol})"
+
+class WatchList(models.Model):
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="watch_list") # User.watch_list.all()
+  company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="watched_by") # Company.watched_by
+  created_at = models.DateTimeField(auto_now_add=True)
+
+  def __str__(self):
+    return f"User: {self.user} -> company: {self.company}"
 
 class Portfolio(models.Model):
   user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="portfolio") # user.portfolio.all()

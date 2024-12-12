@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
-from .serializers import CompanySerializer, TransactionSerializer, MarketDataSerializer, ArticleSerializer, ReportSerializer, CompanyInfoSerializer
-from .models import Company, Portfolio, MarketData, Transaction, Article, Report
+from .serializers import CompanySerializer, TransactionSerializer, MarketDataSerializer, ArticleSerializer, ReportSerializer, CompanyInfoSerializer, WatchListSerializer
+from .models import Company, Portfolio, MarketData, Transaction, Article, Report, WatchList
 from datetime import datetime
 from django.utils.timezone import make_aware
 import yfinance as yf
@@ -56,7 +56,7 @@ class StocksView(APIView):
         return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class StocksRandomViewList(APIView): # ok
+class StocksRandomViewList(APIView):
   authentication_classes = [JWTAuthentication]
   permission_classes = [IsAuthenticated]
 
@@ -234,3 +234,36 @@ class CompanyReportViewList(generics.ListCreateAPIView): # get all reports for g
     else:
       print(serializer.errors)
       raise ValidationError("Unable to create report for given company: (company id is required)")
+
+class WatchListView(APIView):
+  authentication_classes = [JWTAuthentication]
+  permission_classes = [IsAuthenticated]
+  """
+  List all companies watched by user, save company to watchlist, delete company from watchlist
+  """
+  def get(self, request): 
+    user = self.request.user
+    if user:
+      watchlist = WatchList.objects.select_related('company').filter(user=user)
+      companies_serializer = CompanySerializer(watchlist.company, many=True)
+      return Response({
+        "companies": companies_serializer.data,
+      }, status=status.HTTP_200_OK)
+    return Response({ "error": "Not able to get watchlist for given user" }, status=status.HTTP_400_BAD_REQUEST)
+  
+  def post(self, request):
+    user = self.request.user
+    serializer = WatchListSerializer(data=request.data)
+    if serializer.is_valid() and user:
+      serializer.save(user=user)
+      return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+  def delete(self, request):
+    company_id = request.query_params.get("companyId")
+    user = self.request.user
+    if company_id and user:
+      watched_company = WatchList.objects.filter(user=user).get(company=company_id)
+      watched_company.delete()
+      return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response({ "error": "Unable to delete company from watchlist" }, status=status.HTTP_400_BAD_REQUEST)
