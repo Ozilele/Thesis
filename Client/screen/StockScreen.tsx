@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import { Text, View, SafeAreaView, StyleSheet, Pressable, FlatList, ScrollView } from "react-native"
+import { useEffect, useMemo, useState } from "react"
+import { Text, View, SafeAreaView, StyleSheet, Pressable, FlatList, ScrollView, Modal } from "react-native"
 import {
 	StockPriceInterval,
 	StockPriceData,
@@ -20,7 +20,7 @@ import ButtonRowContainer from "../components/ButtonRowContainer"
 import LineChart from "../components/Charts/LineChart"
 import FilterList from "../components/FilterList"
 import djangoApi from "../api/djangoApi"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
+import TransactionModalContainer from "../components/Modals/TransactionModalContainer"
 import OptionsBottomSheet from "../components/OptionsBottomSheet"
 import BarChart from "../components/Charts/BarChart"
 
@@ -52,14 +52,17 @@ function StockScreen({ route, navigation }: StockScreenProps) {
 		news: [],
 		financial: [],
 		technical: [],
-	}) // company
+	})
 	const [stockData, setStockData] = useState<StockMainData>({
 		// stock data
 		currentPrice: priceData.currPrice,
 		stockPriceChange: priceData.relativeDiff,
 		stockPercentChange: priceData.percentDiff,
 	})
-	const isPriceDown = stockData.stockPercentChange < 0 ? true : false
+	const [isModalVisible, setIsModalVisible] = useState<boolean>(false)
+	const isPriceDown = useMemo(() => {
+		stockData.stockPercentChange < 0 ? true : false
+	}, [stockData.stockPercentChange])
 
 	useEffect(() => {
 		// To do - cachowanie requestów na froncie -> nie ciągłe odpytywanie bazy
@@ -209,15 +212,26 @@ function StockScreen({ route, navigation }: StockScreenProps) {
 		}
 	}
 
-	const handleSellStock = () => {}
-
-	const handleBuyStock = () => {}
-
 	const toggleItemWatchlist = () => {}
 
 	return (
 		<>
 			<SafeAreaView style={styles.screenContainer}>
+				<Modal
+					animationType="slide"
+					presentationStyle="pageSheet"
+					visible={isModalVisible}
+					onRequestClose={() => setIsModalVisible(!isModalVisible)}
+				>
+					<TransactionModalContainer
+						data={{
+							companyName: companyData.name,
+							companyTicker: companyData.ticker,
+							currPrice: stockData.currentPrice,
+						}}
+						setModalVisibility={setIsModalVisible}
+					/>
+				</Modal>
 				<View style={styles.topContainer}>
 					<Pressable
 						style={[styles.topPressableBtn, { backgroundColor: "#133E87" }]}
@@ -296,7 +310,7 @@ function StockScreen({ route, navigation }: StockScreenProps) {
 						selectedFilter={companySelectedFilter}
 						changeFilter={(filter: StockInfoData) => setCompanySelectedFilter(filter)}
 					/>
-					{companySelectedFilter === StockInfoData.OVERVIEW && (
+					{companySelectedFilter === StockInfoData.OVERVIEW && companyInfoData.overview.length > 0 ? (
 						<FlatList
 							style={styles.companyInfoContainer}
 							data={companyInfoData["overview"]}
@@ -307,6 +321,10 @@ function StockScreen({ route, navigation }: StockScreenProps) {
 							horizontal={false}
 							showsVerticalScrollIndicator={false}
 						/>
+					) : (
+						<View style={{ marginTop: 16, paddingVertical: 6, paddingHorizontal: 12, alignItems: "center" }}>
+							<Text style={styles.stockPrice}>No overview data found for company</Text>
+						</View>
 					)}
 					{companySelectedFilter === StockInfoData.FINANCIAL &&
 						companyInfoData.financial.length > 0 &&
@@ -342,6 +360,7 @@ function StockScreen({ route, navigation }: StockScreenProps) {
 													return format(date, "MMM y")
 												},
 											}}
+											chartHeight={300}
 											gradientColors={["#4dc9e6", "#210cae"]}
 										/>
 									</View>
@@ -350,7 +369,11 @@ function StockScreen({ route, navigation }: StockScreenProps) {
 						})()}
 				</View>
 			</ScrollView>
-			<OptionsBottomSheet companyId={companyData.id} companyTicker={companyData.ticker} />
+			<OptionsBottomSheet
+				setModalVisible={setIsModalVisible}
+				companyId={companyData.id}
+				companyTicker={companyData.ticker}
+			/>
 		</>
 	)
 }

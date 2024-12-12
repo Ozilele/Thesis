@@ -1,5 +1,5 @@
-import { View, Text } from "react-native"
-import { Bar, CartesianChart, Line, useChartPressState } from "victory-native"
+import { View } from "react-native"
+import { Bar, CartesianChart, useChartPressState } from "victory-native"
 import inter from "../../assets/fonts/Inter24Light.ttf"
 import robotoBold from "../../assets/fonts/Roboto-Bold.ttf"
 import { useFont, LinearGradient, vec } from "@shopify/react-native-skia"
@@ -12,12 +12,13 @@ type BarChartProps = {
 	xKey: string
 	yKeys: string[]
 	chartConfig?: {
-		formatXLabel?: () => void
+		formatXLabel?: (xLabel: string, index: number) => void
 	}
+	chartHeight: number
 	gradientColors?: string[]
 }
 
-function BarChart({ data, xKey, yKeys, chartConfig, lineConfig, chartHeight, gradientColors }: BarChartProps) {
+function BarChart({ data, xKey, yKeys, chartConfig, chartHeight, lineConfig, gradientColors }: BarChartProps) {
 	const font = useFont(inter, 13)
 	const amountLabelFont = useFont(robotoBold, 16)
 	const dataTextFont = useFont(robotoBold, 14)
@@ -29,17 +30,8 @@ function BarChart({ data, xKey, yKeys, chartConfig, lineConfig, chartHeight, gra
 		return data
 	}, [state])
 
-	let activeItem = useDerivedValue(() => {
-		// console.log(state.y[yKeys[0]].position.value)
-		console.log(state.y[yKeys[0]].value.value)
-		return data.findIndex((value) => value[xKey] === state.x.value.value)
-	}).value
-	if (activeItem < 0) {
-		activeItem = 0
-	}
-
 	return (
-		<View style={{ height: 300, width: "100%" }}>
+		<View style={{ height: chartHeight, width: "100%" }}>
 			<CartesianChart
 				data={data}
 				xKey={xKey}
@@ -72,17 +64,8 @@ function BarChart({ data, xKey, yKeys, chartConfig, lineConfig, chartHeight, gra
 						<>
 							<SKText x={chartBounds.left + 10} y={20} font={dataTextFont} text={yData} color="white" style={"fill"} />
 							{points[`${yKeys[0]}`].map((point, index) => {
-								const barValue = point.y
-								const chartHeight = chartBounds.bottom - chartBounds.top
-								const barHeight = chartHeight - barValue!
-								const barTopPos = chartHeight - barHeight
-								const barBottomPos = chartHeight
-								const isPointSelected = isActive
-									? Math.abs(point.x - state.x.position.value) < 1.5 &&
-										state.y[yKeys[0]].position.value >= barTopPos &&
-										state.y[yKeys[0]].position.value <= barBottomPos
-									: false
-								console.log(data[activeItem][yKeys[0]])
+								const isPointSelected =
+									isActive && state.matchedIndex.value === index && state.yIndex.value === 0 ? true : false
 								return (
 									<Bar
 										key={index}
@@ -97,7 +80,7 @@ function BarChart({ data, xKey, yKeys, chartConfig, lineConfig, chartHeight, gra
 										<LinearGradient
 											start={vec(0, 0)}
 											end={vec(0, 400)}
-											colors={index == activeItem ? ["#013220", "#39ff14"] : gradientColors || ["#a78bfa", "#a78bfa50"]}
+											colors={isPointSelected ? ["#013220", "#39ff14"] : gradientColors || ["#a78bfa", "#a78bfa50"]}
 										/>
 									</Bar>
 								)

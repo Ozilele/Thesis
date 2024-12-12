@@ -4,11 +4,12 @@ import React, { useCallback, useMemo, useRef, useState } from "react"
 import { Ionicons } from "@expo/vector-icons"
 
 type OptionsBottomSheetProps = {
+	setModalVisible: React.Dispatch<React.SetStateAction<boolean>>
 	companyId: number
 	companyTicker: string
 }
 
-const OptionsBottomSheet = ({ companyId, companyTicker }: OptionsBottomSheetProps) => {
+const OptionsBottomSheet = ({ setModalVisible, companyId, companyTicker }: OptionsBottomSheetProps) => {
 	const [isSheetExpanded, setIsSheetExpanded] = useState(false)
 	const sheetRef = useRef<BottomSheet>(null)
 	const snapPoints = useMemo(() => ["20%", "35%", "50%", "75%", "90%"], [])
@@ -26,7 +27,7 @@ const OptionsBottomSheet = ({ companyId, companyTicker }: OptionsBottomSheetProp
 	}
 
 	const handleBuyStock = () => {
-		console.log("Buy stock")
+		setModalVisible(true)
 	}
 
 	const handleSellStock = () => {
