@@ -23,6 +23,7 @@ import djangoApi from "../api/djangoApi"
 import TransactionModalContainer from "../components/Modals/TransactionModalContainer"
 import OptionsBottomSheet from "../components/OptionsBottomSheet"
 import BarChart from "../components/Charts/BarChart"
+import { useWatchList } from "../store/context/WatchListContext"
 
 type StockScreenRouteProp = RouteProp<RootStackParamList, "StockItemScreen">
 type StockScreenNavigationProp = NavigationProp<RootStackParamList, "StockItemScreen">
@@ -43,6 +44,7 @@ const renderOverviewItem = (item: CompanyOverviewItem, index: number) => {
 }
 
 function StockScreen({ route, navigation }: StockScreenProps) {
+	const { watchlistState } = useWatchList()
 	const { companyData, priceData } = route.params
 	const [stockPriceInterval, setStockPriceInterval] = useState<StockPriceInterval>(StockPriceInterval.ONE_FULL_YEAR) // 7D, 1M, 3M, 6M, YTD, 1Y, 5Y, MAX
 	const [companySelectedFilter, setCompanySelectedFilter] = useState<StockInfoData>(StockInfoData.OVERVIEW)
@@ -61,8 +63,10 @@ function StockScreen({ route, navigation }: StockScreenProps) {
 	})
 	const [isModalVisible, setIsModalVisible] = useState<boolean>(false)
 	const isPriceDown = useMemo(() => {
-		stockData.stockPercentChange < 0 ? true : false
+		return stockData.stockPercentChange < 0 ? true : false
 	}, [stockData.stockPercentChange])
+
+	console.log("Watchlist state " + watchlistState)
 
 	useEffect(() => {
 		// To do - cachowanie requestów na froncie -> nie ciągłe odpytywanie bazy
@@ -116,6 +120,7 @@ function StockScreen({ route, navigation }: StockScreenProps) {
 	}, [companySelectedFilter])
 
 	const getCompanyInfo = async () => {
+		// company info
 		let dataInfo = []
 		switch (companySelectedFilter) {
 			case StockInfoData.OVERVIEW: {
