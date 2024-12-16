@@ -16,6 +16,16 @@ class CompanySerializer(serializers.ModelSerializer):
       raise exceptions.ValidationError('Company sentiment must be between 0 and 1.')
     return sentiment
 
+class CompanyOtherSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Company
+    fields = ["id", "name", "sector", "ticker_symbol", "logo", "market", "sentiment"]
+    
+  def validate_sentiment(self, sentiment):
+    if sentiment < 0 and sentiment > 1:
+      raise exceptions.ValidationError('Company sentiment must be between 0 and 1.')
+    return sentiment
+
 class PortfolioSerializer(serializers.ModelSerializer):
   class Meta:
     model = Portfolio 

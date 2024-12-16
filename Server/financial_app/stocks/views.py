@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
-from .serializers import CompanySerializer, TransactionSerializer, MarketDataSerializer, ArticleSerializer, ReportSerializer, CompanyInfoSerializer, WatchListSerializer
+from .serializers import CompanySerializer, TransactionSerializer, MarketDataSerializer, ArticleSerializer, ReportSerializer, CompanyInfoSerializer, WatchListSerializer, CompanyOtherSerializer
 from .models import Company, Portfolio, MarketData, Transaction, Article, Report, WatchList
 from datetime import datetime
 from django.utils.timezone import make_aware
@@ -13,7 +13,7 @@ import heapq
 import pytz
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-class StocksView(APIView):
+class StocksView(APIView): 
   permission_classes = [IsAuthenticated]
 
   def get_object(self, pk, isInfoNeeded):
@@ -35,9 +35,23 @@ class StocksView(APIView):
         "companyInfo": company_info_serializer.data
       }, status=status.HTTP_200_OK)
     else:
-      stocks = Company.objects.all()
-      serializer = CompanySerializer(stocks, many=True)
-      return Response(serializer.data, status=status.HTTP_200_OK)   
+      page = int(request.query_params.get("page")) - 1
+      records = int(request.query_params.get("records")) # records per page
+      companies = Company.objects.values("id", "name", "sector", "ticker_symbol", "logo", "market", "sentiment").all()[page * records:(page * records) + records]
+      stocks = []
+
+      for company in companies:
+        company_last_market_data = list(MarketData.objects.filter(stock=company['id']).order_by('-timestamp')[:7]) # SELECT * FROM market_data WHERE company_id = <id> ORDER BY timestamp DESC LIMIT 7
+        company_last_market_data.reverse()
+        statistics = company_last_market_data[len(company_last_market_data) - 1].get_difference(company_last_market_data[0]) # diff between latest and oldest given timestamp
+        currPrice = company_last_market_data[len(company_last_market_data) - 1].price
+        stocks.append({
+          'companyData': CompanyOtherSerializer(company).data,
+          'currPrice': currPrice,
+          'difference': statistics,
+          'marketData': MarketDataSerializer(company_last_market_data, many=True).data # lista rekordów
+        })
+      return Response({"stocks": stocks }, status=status.HTTP_200_OK)
     
   def post(self, request):
     serializer = CompanySerializer(data=request.data)
@@ -56,7 +70,42 @@ class StocksView(APIView):
         return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class StocksRandomViewList(APIView):
+class StocksQueryView(generics.ListAPIView):
+  serializer_class = Company.objects.all()
+  permission_classes = [IsAuthenticated]
+
+  def get_queryset(self):
+    page = int(self.request.query_params.get("page")) - 1
+    filter_type = self.request.query_params.get("filter")
+    filter_value = self.request.query_params.get("value")
+    limit_records = self.request.query_params.get("limit") or 20
+    stocks = []
+    if filter_type and filter_value:
+      filter_kwargs = {f"{filter_type}_istartswith": filter_value}
+      companies = Company.objects.values("id", "name", "sector", "ticker_symbol", "logo", "market", "sentiment").filter(**filter_kwargs)[page * limit_records:(page * limit_records) + limit_records]
+      for company in companies:
+        company_last_market_data = list(MarketData.objects.filter(stock=company['id']).order_by('-timestamp')[:7])
+        company_last_market_data.reverse()
+        statistics = company_last_market_data[len(company_last_market_data) - 1].get_difference(company_last_market_data[0])
+        currPrice = company_last_market_data[len(company_last_market_data) - 1].price
+        stocks.append({
+          'companyData': CompanyOtherSerializer(company).data,
+          'currPrice': currPrice,
+          'difference': statistics,
+          'marketData': MarketDataSerializer(company_last_market_data, many=True).data # lista rekordów
+        })
+        return stocks
+    else:
+      raise Exception("Filtering error")
+
+  def list(self, request, *args, **kwargs):
+    try:
+      stocks = self.get_queryset()
+      return Response({"stocks": stocks }, status=status.HTTP_200_OK)
+    except Exception as e:
+      return Response({"error": "Filter type and value are required to apply filtering"}, status=status.HTTP_400_BAD_REQUEST)
+
+class StocksRandomViewList(APIView): # git
   authentication_classes = [JWTAuthentication]
   permission_classes = [IsAuthenticated]
 
@@ -80,7 +129,7 @@ class StocksRandomViewList(APIView):
       "data": random_stocks,
     }, status=status.HTTP_200_OK)
 
-class StocksMoversView(generics.ListAPIView):
+class StocksMoversView(generics.ListAPIView): # git
   queryset = Company.objects.all()
   permission_classes = [IsAuthenticated]
 
@@ -120,9 +169,11 @@ class StocksMoversView(generics.ListAPIView):
       "movers": stock_movers
     }, status=status.HTTP_200_OK)
     
-class StockPricesDataView(APIView):
+class StockPricesDataView(APIView): # git
   permission_classes = [IsAuthenticated]
-
+  """
+  Return prices for single stock from given period and post prices: -> to do: validate from_date, apply given interval
+  """
   def get(self, request, ticker=None): # get prices for single stock from given period
     stock_price_period = request.query_params.get("from_date")
     if ticker:
@@ -145,7 +196,7 @@ class StockPricesDataView(APIView):
         return Response({"error": f"Stock of this ticker: {ticker} was not found"}, status=status.HTTP_404_NOT_FOUND)
     return Response({"info": "Stock ticker is required to get the price data"}, status=status.HTTP_404_NOT_FOUND)
 
-  def post(self, request, ticker=None): # post market_data for given stock
+  def post(self, request, ticker=None):
     if ticker:
       try:
         company = Company.objects.get(ticker_symbol=ticker)
@@ -156,10 +207,48 @@ class StockPricesDataView(APIView):
       except Company.DoesNotExist:
         return Response({"error": "Unable to post the data for company"}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"error": "Unable to post the data for company(ticker is required)"}, status=status.HTTP_400_BAD_REQUEST)
-    
-class PortfolioView(generics.ListAPIView): # get portfolio assets for given user
+
+class StockLastPricesView(generics.ListAPIView): # test
+  queryset = MarketData.objects.all()
+  serializer_class = MarketDataSerializer
+  permission_classes = [IsAuthenticated]
+
+  def get_queryset(self):
+    ticker = self.kwargs.get('ticker')
+    if ticker:
+      try:
+        company = Company.objects.get(ticker_symbol=ticker)
+        company_last_market_data = list(company.price_data.all().order_by('-timestamp')[:7]) # SELECT * FROM market_data WHERE company_id = <id> ORDER BY timestamp DESC LIMIT 7
+        stock_price_change = company_last_market_data[0].get_difference(company_last_market_data[len(company_last_market_data) - 1]) # diff between latest and oldest given timestamp
+        if len(company_last_market_data) > 0:
+          return company_last_market_data, stock_price_change['percent_diff'], stock_price_change['relative_diff']
+        return None, None, None
+      except Company.DoesNotExist:
+        raise Exception(f"Stock of this ticker: {ticker} was not found")
+    raise Exception("Stock ticker is required to get the price data")
+
+  def list(self, request, *args, **kwargs):
+    try:
+      market_data, percent_diff, relative_diff = self.get_queryset()
+      if market_data is None or percent_diff is None or relative_diff is None:
+        return Response({
+          "info": f"Stock prices unavailable for ticker: {self.kwargs.get('ticker')}"
+        }, status=status.HTTP_200_OK)
+      else:
+        return Response({
+          "stock_prices": MarketDataSerializer(market_data.reverse(), many=True).data,
+          "stock_percent_diff": percent_diff,
+          "stock_relative_diff": relative_diff
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+      return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+class PortfolioView(generics.ListAPIView): # to check
   queryset = Portfolio.objects.all()
   permission_classes = [IsAuthenticated]
+  """
+  Get assets in possession by given user
+  """
 
   def get_queryset(self):
     curr_user = self.request.user
@@ -187,9 +276,11 @@ class PortfolioView(generics.ListAPIView): # get portfolio assets for given user
       'relative_diff': portfolio_dict['relative_diff']
     }, status=status.HTTP_200_OK)
   
-class TransactionView(APIView):
+class TransactionView(APIView): # to do
   permission_classes = [IsAuthenticated]
-
+  """
+  Get all transactions
+  """
   def get(self, request):
     user = self.request.user
     all_user_transactions = Transaction.objects.filter(user=user) # wszystkie transakcje 
@@ -199,10 +290,13 @@ class TransactionView(APIView):
     #   # transaction -> single Transaction
     # return transaction
 
-class CompanyArticleViewList(generics.ListCreateAPIView): # get all articles for given company, and create
+class CompanyArticleViewList(generics.ListCreateAPIView): # to do
   queryset = Article.objects.all()
   permission_classes = [IsAuthenticated]
   serializer_class = ArticleSerializer
+  """
+  Get all articles for given company, and post article
+  """
   
   def get_queryset(self):
     company_id = self.kwargs.get('company_id')
@@ -217,10 +311,13 @@ class CompanyArticleViewList(generics.ListCreateAPIView): # get all articles for
       print(serializer.errors)
       raise ValidationError("Unable to create article for given company: (company id is required)")
     
-class CompanyReportViewList(generics.ListCreateAPIView): # get all reports for given company and create report
+class CompanyReportViewList(generics.ListCreateAPIView): # git
   queryset = Report.objects.all()
   permission_classes = [IsAuthenticated]
   serializer_class = ReportSerializer
+  """
+  # Get all reports for given company and post report
+  """
 
   def get_queryset(self):
     company = self.kwargs.get('company_id')
@@ -235,7 +332,7 @@ class CompanyReportViewList(generics.ListCreateAPIView): # get all reports for g
       print(serializer.errors)
       raise ValidationError("Unable to create report for given company: (company id is required)")
 
-class WatchListView(APIView):
+class WatchListView(APIView): # to check
   authentication_classes = [JWTAuthentication]
   permission_classes = [IsAuthenticated]
   """
