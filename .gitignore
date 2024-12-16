@@ -11,9 +11,13 @@ Client/ios/
 # ENV
 Client/.env
 Server/financial_app/.env
+Model/.env
 
 # Test dir
 Test/
+
+# Model dir
+Model/
 
 # Expo
 .expo/
