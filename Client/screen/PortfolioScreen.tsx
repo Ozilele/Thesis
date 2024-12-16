@@ -3,7 +3,7 @@ import BarChart from "../components/Charts/BarChart"
 import StockGridTile from "../components/StockGridTile"
 import { marketTodaysStock } from "../data/utils"
 import { useEffect, useState } from "react"
-import StockItemChart from "../components/Charts/StockItemChart"
+import StockItemChart from "../components/Charts/StockPriceChart"
 import { NavigationProp, RouteProp } from "@react-navigation/native"
 import { RootStackParamList } from "../types/app-types"
 

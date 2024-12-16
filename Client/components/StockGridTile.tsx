@@ -1,44 +1,20 @@
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
-import { useEffect, useState } from "react"
-import { View, StyleSheet, Platform, Pressable, Text, Image } from "react-native"
+import { View, StyleSheet, Pressable, Text, ViewStyle } from "react-native"
 import StockCompanyLogo from "../components/StockCompanyLogo"
-import StockItemChart from "../components/Charts/StockItemChart"
 import { CompanyMarketView } from "../types/app-types"
+import { memo } from "react"
 
 type StockGridTileProps = {
 	id: number
 	stockData: CompanyMarketView
 	onStockItemPress: () => void
-	style: {} | undefined
+	style?: ViewStyle
 	isLogoRequired: boolean
 	chartComponent: React.ReactNode | null
 }
 
 function StockGridTile({ id, stockData, onStockItemPress, style, isLogoRequired, chartComponent }: StockGridTileProps) {
-	useEffect(() => {
-		if (isLogoRequired) {
-			// make api call
-			const API_LOGO_URL = `https://api.api-ninjas.com/v1/logo?ticker=${stockData.ticker}`
-			const API_LOGO_KEY = process.env.EXPO_PUBLIC_API_LOGO_KEY
-			// axios
-			// 	.get(API_LOGO_URL, {
-			// 		headers: {
-			// 			"X-Api-Key": API_LOGO_KEY,
-			// 		},
-			// 	})
-			// 	.then((response) => {
-			// 		if (response.status == 200) {
-			// 			console.log(response.data[0].image)
-			// 			setLogoURL(response.data[0].image)
-			// 		}
-			// 	})
-			// 	.catch((err) => {
-			// 		console.log(err)
-			// 	})
-		}
-	}, [])
-
 	const marketToday = stockData as CompanyMarketView
 
 	return (
@@ -49,10 +25,14 @@ function StockGridTile({ id, stockData, onStockItemPress, style, isLogoRequired,
 		>
 			<LinearGradient
 				colors={["#323C55", "#30394C", "#282A36"]}
-				style={[styles.gridItem, isLogoRequired && { paddingVertical: 24 }]}
+				style={[
+					styles.gridItem,
+					isLogoRequired && { paddingVertical: 24 },
+					style?.marginHorizontal && { marginHorizontal: style?.marginHorizontal },
+				]}
 			>
 				{isLogoRequired && (
-					<View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+					<View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
 						<StockCompanyLogo url={stockData.companyLogo ? stockData.companyLogo : ""} />
 						<View style={styles.tickerNameTxtContainer}>
 							<Text
@@ -76,11 +56,11 @@ function StockGridTile({ id, stockData, onStockItemPress, style, isLogoRequired,
 							</Text>
 						</View>
 						<View style={styles.chartAreaContainer}>{chartComponent}</View>
-						<View style={{ alignItems: "center", marginLeft: 3 }}>
+						<View style={{ alignItems: "center", marginLeft: 1 }}>
 							<Text style={styles.rowStockPrice}>{`$${stockData.currPrice}`}</Text>
 							<View style={{ flexDirection: "row", alignItems: "center" }}>
 								<Ionicons
-									name={stockData.percentDiff > 0 ? "caret-up-outline" : "caret-down-outline"}
+									name={stockData.percentDiff > 0 ? "arrow-up-outline" : "arrow-down-outline"}
 									size={20}
 									color={stockData.percentDiff > 0 ? "#2DCE5A" : "#E34646"}
 								/>
@@ -92,9 +72,9 @@ function StockGridTile({ id, stockData, onStockItemPress, style, isLogoRequired,
 					</View>
 				)}
 				{!isLogoRequired && (
-					<View style={{ gap: 8 }}>
+					<View style={{ gap: 10 }}>
 						<View style={styles.gridTileRow}>
-							<Text style={styles.stockNameText}>{marketToday.companyName}</Text>
+							<Text style={styles.stockNameText}>{marketToday.ticker}</Text>
 							<Text
 								style={[
 									styles.percentChangeTxt,
@@ -105,10 +85,10 @@ function StockGridTile({ id, stockData, onStockItemPress, style, isLogoRequired,
 							</Text>
 						</View>
 						<View style={styles.gridTileRow}>
-							<Text style={styles.priceTxt}>{marketToday.currPrice}</Text>
+							<Text style={styles.priceTxt}>{`$${marketToday.currPrice}`}</Text>
 							<Ionicons
-								name={marketToday.percentDiff > 0 ? "caret-up-outline" : "caret-down-outline"}
-								size={22}
+								name={marketToday.percentDiff > 0 ? "arrow-up-outline" : "arrow-down-outline"}
+								size={20}
 								color={marketToday.percentDiff > 0 ? "#2DCE5A" : "#E34646"}
 							/>
 						</View>
@@ -119,7 +99,7 @@ function StockGridTile({ id, stockData, onStockItemPress, style, isLogoRequired,
 	)
 }
 
-export default StockGridTile
+export default memo(StockGridTile)
 
 const styles = StyleSheet.create({
 	stockButton: {
@@ -131,16 +111,10 @@ const styles = StyleSheet.create({
 	gridItem: {
 		flex: 1,
 		marginBottom: 12,
-		marginHorizontal: 8,
+		marginHorizontal: 6,
 		borderRadius: 8,
 		paddingVertical: 18,
 		paddingHorizontal: 8,
-		// elevation: 4,
-		// shadowColor: "black",
-		// shadowOpacity: 0.25,
-		// shadowOffset: { width: 0, height: 2 },
-		// shadowRadius: 8,
-		// overflow: Platform.OS == "android" ? "hidden" : "visible",
 	},
 	gridTileRow: {
 		flexDirection: "row",
@@ -152,11 +126,12 @@ const styles = StyleSheet.create({
 		color: "white",
 	},
 	percentChangeTxt: {
-		fontSize: 18,
+		fontSize: 16,
+		fontFamily: "roboto-medium",
 	},
 	priceTxt: {
 		fontFamily: "roboto-medium",
-		fontSize: 18,
+		fontSize: 16,
 		color: "whitesmoke",
 	},
 	tickerNameTxtContainer: {
@@ -171,7 +146,7 @@ const styles = StyleSheet.create({
 	},
 	chartAreaContainer: {
 		flex: 1,
-		marginRight: 12,
+		marginRight: 6,
 	},
 	priceChangeTxt: {
 		color: "#2DCE5A",

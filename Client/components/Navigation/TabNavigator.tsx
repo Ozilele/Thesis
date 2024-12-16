@@ -6,11 +6,13 @@ import PortfolioScreen from "../../screen/PortfolioScreen"
 import FollowedListScreen from "../../screen/FollowedListScreen"
 import { Ionicons } from "@expo/vector-icons"
 import { useState } from "react"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 const BottomTab = createBottomTabNavigator()
 
 function TabNavigator() {
 	const [isBottomBarVisible, setBottomBarVisible] = useState<boolean>(true)
+	const insets = useSafeAreaInsets()
 
 	const handleBottomBarToggle = () => {
 		setBottomBarVisible((prev) => !prev)
@@ -42,8 +44,17 @@ function TabNavigator() {
 					}
 					return <Ionicons name={iconName} size={size} color={color} />
 				},
-				tabBarStyle: isBottomBarVisible ? { ...styles.tabBarStyle } : { display: "none" },
-				tabBarItemStyle: { ...styles.tabBarItemStyle },
+				tabBarStyle: isBottomBarVisible
+					? {
+							...styles.tabBarStyle,
+							marginBottom: insets.bottom,
+							// marginLeft: insets.left,
+							// marginRight: insets.right,
+						}
+					: { display: "none" },
+				tabBarItemStyle: {
+					...styles.tabBarItemStyle,
+				},
 				tabBarLabel: ({ focused, color, children }) => {
 					return (
 						<View>
@@ -80,7 +91,7 @@ export default TabNavigator
 const styles = StyleSheet.create({
 	tabBarStyle: {
 		position: "absolute",
-		bottom: 10,
+		bottom: -10,
 		left: 10,
 		right: 10,
 		height: 80,

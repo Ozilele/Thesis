@@ -9,6 +9,7 @@ import { useFonts } from "expo-font"
 import LoginScreen from "./screen/auth/LoginScreen"
 import RegisterScreen from "./screen/auth/RegisterScreen"
 import AuthProvider, { useAuth } from "./store/context/AuthContext"
+import WatchListProvider from "./store/context/WatchListContext"
 import { RootStackParamList } from "./types/app-types"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 
@@ -38,71 +39,53 @@ export const Layout = () => {
 
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
-			<NavigationContainer>
-				<Stack.Navigator
-					screenOptions={{
-						contentStyle: { backgroundColor: "#1A1A19" },
-						headerTintColor: "whitesmoke",
-						headerStyle: { backgroundColor: "#133E87" },
-					}}
-				>
-					{authState?.authenticated ? (
-						<>
-							{/* logo-python */}
-							<Stack.Screen
-								name="App"
-								component={TabNavigator}
-								options={{
-									headerShown: false,
-								}}
-							/>
-							<Stack.Screen
-								name="StockItemScreen"
-								component={StockScreen}
-								options={{
-									headerShown: false,
-									// headerLeft: <Ionicons name="arrow-back" size={20} color="whitesmoke"/>
-									// headerBackTitleVisible: false,
-									// headerRight: () => (
-									// 	<View style={styles.stockItemHeaderRightContainer}>
-									// 		<Pressable
-									// 			style={{
-									// 				backgroundColor: "whitesmoke",
-									// 				padding: 4,
-									// 				borderRadius: "50%",
-									// 			}}
-									// 			onPress={toggleStockItem}
-									// 		>
-									// 			<Ionicons name="heart-outline" size={26} color="black" />
-									// 		</Pressable>
-									// 		<Pressable>
-									// 			<Ionicons name="share" size={28} color="" />
-									// 		</Pressable>
-									// 	</View>
-									// ),
-								}}
-							/>
-						</>
-					) : (
-						<>
-							<Stack.Screen
-								name="Login"
-								component={LoginScreen}
-								options={{
-									headerShown: false,
-								}}
-							/>
-							<Stack.Screen
-								name="Register"
-								component={RegisterScreen}
-								options={{
-									headerShown: false,
-								}}
-							/>
-						</>
-					)}
-				</Stack.Navigator>
-			</NavigationContainer>
+			<WatchListProvider>
+				<NavigationContainer>
+					<Stack.Navigator
+						screenOptions={{
+							contentStyle: { backgroundColor: "#1A1A19" },
+							headerTintColor: "whitesmoke",
+							headerStyle: { backgroundColor: "#133E87" },
+						}}
+					>
+						{authState?.authenticated ? (
+							<>
+								<Stack.Screen
+									name="App"
+									component={TabNavigator}
+									options={{
+										headerShown: false,
+									}}
+								/>
+								<Stack.Screen
+									name="StockItemScreen"
+									component={StockScreen}
+									options={{
+										headerShown: false,
+									}}
+								/>
+							</>
+						) : (
+							<>
+								<Stack.Screen
+									name="Login"
+									component={LoginScreen}
+									options={{
+										headerShown: false,
+									}}
+								/>
+								<Stack.Screen
+									name="Register"
+									component={RegisterScreen}
+									options={{
+										headerShown: false,
+									}}
+								/>
+							</>
+						)}
+					</Stack.Navigator>
+				</NavigationContainer>
+			</WatchListProvider>
 		</GestureHandlerRootView>
 	)
 }

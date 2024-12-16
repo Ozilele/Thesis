@@ -28,7 +28,7 @@ export const setupAPIResponseInterceptor = () => {
 				console.log("Axios " + error.status) // ERROR_BAD_REQUEST
 			}
 			if (axios.isAxiosError(error)) {
-				// status === 401
+				console.log(error.status)
 				// Handling unauthorized access response trying to access protected routes on API
 				if (error.status == 401) {
 					try {

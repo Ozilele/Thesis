@@ -70,8 +70,13 @@ export default function HomeScreen({ navigation, onBottomBarToggle }: HomeScreen
 	const drawerStatus = useDrawerStatus()
 
 	useEffect(() => {
-		// viewTodaysMarket()
-		viewBiggestGainers()
+		Promise.all([viewTodaysMarket(), viewBiggestGainers()])
+			.then((allData) => {
+				console.log("Dobrze pobrano dane")
+			})
+			.catch((err) => {
+				console.log(err)
+			})
 	}, [])
 
 	useEffect(() => {
@@ -115,6 +120,7 @@ export default function HomeScreen({ navigation, onBottomBarToggle }: HomeScreen
 				todaysMarket.push(marketItem)
 			}
 			setTodaysMarketData(todaysMarket)
+			return todaysMarket
 		} catch (error) {
 			console.log(error)
 		}
@@ -140,6 +146,7 @@ export default function HomeScreen({ navigation, onBottomBarToggle }: HomeScreen
 					return move
 				})
 				setBiggestGainers(gainers)
+				return gainers
 			}
 		} catch (error) {
 			console.error(error)

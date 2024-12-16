@@ -17,6 +17,16 @@ export enum StockInfoData {
 	TECHNICAL = "Technical",
 }
 
+export enum MarketFilterOption {
+	ALL = "All",
+	TRENDING = "Trending",
+	PROFIT = "Profit",
+	LOSS = "Loss",
+	NEWEST = "Newest",
+	NYSE = "Nyse",
+	NASDAQ = "Nasdaq",
+}
+
 export enum AppTheme {
 	DARK = "dark",
 	LIGHT = "light",
@@ -31,6 +41,11 @@ export type StockMainData = {
 	currentPrice: number
 	stockPriceChange: number
 	stockPercentChange: number
+}
+
+export interface StockMarketDataState {
+	wholeData: CompanyMarketView[]
+	queriedData: CompanyMarketView[]
 }
 
 export enum AuthFormMode {
@@ -85,6 +100,7 @@ export type CompanyMarketView = {
 	relativeDiff: number
 	companyMarket?: string
 	companySector?: string
+	chartPriceData?: StockPriceData[]
 }
 
 export type CompanyOverviewItem = {

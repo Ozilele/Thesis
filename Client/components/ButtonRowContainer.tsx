@@ -53,9 +53,6 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 4,
 		backgroundColor: "transparent",
 		borderRadius: 6,
-		// color: "white",
-		// flexDirection: "row",
-		// backgroundColor: "#404B5C",
 	},
 	btnActive: {
 		backgroundColor: "#213140",
