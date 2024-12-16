@@ -3,6 +3,7 @@ import djangoApi from "../../api/djangoApi"
 
 interface WatchListContextType {
 	watchlistState?: { tickers: any[] }
+	loadWatchList?: () => Promise<any>
 	addToWatchList?: (stockTicker: string) => void
 	removeFromWatchList?: (stockTicker: string) => void
 	saveToServer?: (companyId: number) => Promise<any>
@@ -20,23 +21,36 @@ type WatchListProviderProps = {
 }
 
 const WatchListProvider = ({ children }: WatchListProviderProps) => {
-	const [watchedTickers, setWatchedTickers] = useState<any[]>([])
+	const [watchedTickers, setWatchedTickers] = useState<any[]>(["AAPL"])
 
 	useEffect(() => {
-		const loadWatchedTickers = async () => {
-			try {
-				const response = await djangoApi.get(`/stocks/watchlist/`)
-				if (response.status === 200) {
-					console.log(response.data)
-					console.log(response.data.companies)
-					setWatchedTickers(response.data.companies)
-				}
-			} catch (error) {
-				return { error: true, msg: (error as any).response.data.msg }
-			}
-		}
-		loadWatchedTickers()
+		// const loadWatchedTickers = async () => {
+		// 	try {
+		// 		const response = await djangoApi.get(`/stocks/watchlist/`)
+		// 		if (response.status === 200) {
+		// 			console.log(response.data)
+		// 			console.log(response.data.companies)
+		// 			setWatchedTickers(response.data.companies)
+		// 		}
+		// 	} catch (error) {
+		// 		return { error: true, msg: (error as any).response.data.msg }
+		// 	}
+		// }
+		// loadWatchedTickers()
 	}, [])
+
+	const loadWatchedTickers = async () => {
+		try {
+			const response = await djangoApi.get(`/stocks/watchlist/`)
+			if (response.status === 200) {
+				console.log(response.data.companies)
+				setWatchedTickers(response.data.companies)
+				return response.data.companies
+			}
+		} catch (error) {
+			return { error: true, msg: (error as any).response.data.msg }
+		}
+	}
 
 	const addTickerToWatchList = (stockTicker: string) => {
 		setWatchedTickers((prevTickers) => [...prevTickers, stockTicker])
@@ -73,7 +87,10 @@ const WatchListProvider = ({ children }: WatchListProviderProps) => {
 	}
 
 	const contextValue = {
-		watchlistState: watchedTickers,
+		watchlistState: {
+			tickers: watchedTickers,
+		},
+		loadWatchList: loadWatchedTickers,
 		addToWatchList: addTickerToWatchList,
 		removeFromWatchList: removeTickerFromWatchList,
 		saveToServer: saveToWatchList,
